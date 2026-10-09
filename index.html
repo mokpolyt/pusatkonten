@@ -187,22 +187,27 @@
   }
   async function saveRows() {
     if (!db) return;
-    const payload = rows.map((r, i) => ({
-      ...(r.id ? { id: r.id } : {}),
-      platform: activePlatform,
-      title: r.title || "",
-      content_text: r.content_text || "",
-      planned_upload: r.planned_upload || null,
-      uploaded: r.uploaded || "Belum",
-      notes: r.notes || "",
-      sort_order: i
-    }));
-    // Upsert current rows, then remove deleted rows only if explicitly tracked (no delete UI in this starter).
-    if (payload.length) {
-      const { data, error } = await db.from(TABLE).upsert(payload, { onConflict: "id" }).select();
-      if (error) throw error;
-      const idsByOrder = new Map((data || []).map(r => [r.sort_order, r.id]));
-      rows.forEach((r, i) => { if (!r.id && idsByOrder.has(i)) r.id = idsByOrder.get(i); });
+    // Insert new rows without an id so PostgreSQL can generate it.
+    // Update existing rows by id. This avoids sending null ids via upsert.
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const payload = {
+        platform: activePlatform,
+        title: r.title || "",
+        content_text: r.content_text || "",
+        planned_upload: r.planned_upload || null,
+        uploaded: r.uploaded || "Belum",
+        notes: r.notes || "",
+        sort_order: i
+      };
+      if (r.id !== undefined && r.id !== null && r.id !== "") {
+        const { error } = await db.from(TABLE).update(payload).eq("id", r.id);
+        if (error) throw error;
+      } else {
+        const { data, error } = await db.from(TABLE).insert(payload).select("id").single();
+        if (error) throw error;
+        r.id = data.id;
+      }
     }
     setStatus("Tersimpan ✓", "ok");
   }
