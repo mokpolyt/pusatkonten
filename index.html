@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Planning Konten Cruttz!</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --pink: #ec2da3;
+      --pink2: #f23b88;
+      --cyan: #08a6b3;
+      --ink: #101a3d;
+      --muted: #5d665d;
+      --card: #fff;
+      --line: rgba(20,35,35,.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: Inter, Arial, Helvetica, sans-serif; color: #151515;
+      background: #f4f4f4;
+    }
+    .app { min-height: 100vh; transition: background .25s ease; padding: 28px clamp(12px, 3vw, 38px) 44px; }
+    .app[data-platform="threads"] { background: #cfe5c5; }
+    .app[data-platform="instagram"] { background: linear-gradient(115deg,#f4d9b2 0%,#f0b9c4 100%); }
+    .app[data-platform="youtube"] { background: #c6f4f7; }
+    .top { max-width: 1500px; margin: 0 auto; }
+    .brand {
+      margin: 0 auto 22px; width: fit-content; max-width: 100%; text-align: center;
+      color: var(--ink); font-weight: 1000; font-size: clamp(22px, 2.5vw, 32px);
+      letter-spacing: -.8px; line-height: .9; text-transform: uppercase;
+    }
+    .brand .pink { color: #f32687; }
+    .brand .tilt { display: block; font-size: .7em; transform: rotate(-7deg); margin-left: 100px; }
+    .tabs {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 0; background: linear-gradient(90deg,#f03f88,#df23b7);
+      margin-bottom: 22px; overflow: hidden;
+    }
+    .tab {
+      border: 0; border-radius: 0; background: transparent; color: white; cursor: pointer;
+      padding: 11px 12px; font-weight: 900; font-size: clamp(14px,1.5vw,19px); text-transform: uppercase;
+      transition: background .2s ease;
+    }
+    .tab:hover { background: rgba(255,255,255,.14); }
+    .tab.active { background: rgba(255,255,255,.19); box-shadow: inset 0 -4px 0 #ffa914; }
+    .table-wrap { overflow-x: auto; padding-bottom: 8px; }
+    table { border-collapse: separate; border-spacing: 12px 10px; width: 100%; min-width: 780px; table-layout: fixed; }
+    col.num { width: 26px; }
+    col.title { width: 11%; }
+    col.content { width: 19%; }
+    col.date { width: 19%; }
+    col.uploaded { width: 19%; }
+    col.notes { width: 19%; }
+    th { text-align: left; font-size: 14px; font-weight: 800; padding: 2px 8px 0; white-space: nowrap; }
+    th:first-child { padding: 0; }
+    td { vertical-align: top; padding: 0; }
+    .rownum { font-weight: 800; text-align: center; padding-top: 18px; }
+    textarea, input, select {
+      width: 100%; display: block; border: 1px solid transparent; background: white; color: #1a1a1a;
+      font: inherit; font-size: 14px; border-radius: 0; outline: none; padding: 12px 10px;
+      transition: border-color .15s, box-shadow .15s; resize: vertical;
+    }
+    textarea { min-height: 76px; line-height: 1.4; }
+    td.title textarea { min-height: 76px; }
+    td.content textarea { min-height: 76px; }
+    td.notes textarea { min-height: 76px; }
+    input[type="date"] { min-height: 76px; }
+    select { min-height: 76px; cursor: pointer; }
+    textarea:focus, input:focus, select:focus { border-color: #08a6b3; box-shadow: 0 0 0 2px rgba(8,166,179,.13); }
+    .actions { display: flex; align-items: center; gap: 12px; margin: 4px 0 0 38px; }
+    .add {
+      border: 0; background: var(--cyan); color: #071b1c; border-radius: 999px; padding: 10px 24px;
+      font-size: 14px; font-weight: 800; cursor: pointer; min-width: 112px;
+    }
+    .add:hover { filter: brightness(.95); }
+    .status { font-size: 12px; color: #31433c; }
+    .status.error { color: #a4002b; font-weight: 700; }
+    .status.ok { color: #145b3a; }
+    .footer { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:18px 0 0 38px; flex-wrap:wrap; }
+    .setup-note { max-width: 900px; margin: 22px auto 0; color: #33403a; font-size: 12px; opacity: .85; }
+    @media (max-width: 600px) {
+      .app { padding: 20px 10px 30px; }
+      .brand { margin-bottom: 18px; }
+      .tabs { margin-bottom: 12px; }
+      .tab { padding: 12px 4px; }
+      table { border-spacing: 8px 8px; }
+      .actions, .footer { margin-left: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" id="app" data-platform="threads">
+    <div class="top">
+      <h1 class="brand">PLANNING <span class="pink">KONTEN</span><span class="tilt">CRUTTZ!</span></h1>
+      <nav class="tabs" aria-label="Platform konten">
+        <button class="tab active" data-platform="threads">Threads</button>
+        <button class="tab" data-platform="instagram">Instagram</button>
+        <button class="tab" data-platform="youtube">YouTube</button>
+      </nav>
+      <section class="table-wrap">
+        <table aria-label="Tabel perencanaan konten">
+          <colgroup>
+            <col class="num"><col class="title"><col class="content"><col class="date"><col class="uploaded"><col class="notes">
+          </colgroup>
+          <thead>
+            <tr><th></th><th>JUDUL</th><th>TEKS</th><th>RENCANA UPLOAD</th><th>UPLOADED?</th><th>KETERANGAN?</th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </section>
+      <div class="actions">
+        <button class="add" id="addRow">+ baris</button>
+        <span class="status" id="status">Menghubungkan ke Supabase…</span>
+      </div>
+      <div class="footer">
+        <span class="status">Perubahan disimpan otomatis.</span>
+        <button class="add" id="reload" style="background:#fff;">Muat ulang data</button>
+      </div>
+      <p class="setup-note">Isi konfigurasi Supabase di bagian CONFIG pada file index.html sebelum digunakan. Untuk keamanan, jangan gunakan policy publik untuk data sensitif.</p>
+    </div>
+  </main>
+<script>
+  // 1) Replace these two values with your Supabase project details.
+  const SUPABASE_URL = "https://nuzigytcmwqwjzufosxo.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_QCQN5gFX7HnDBSPWe1TsRQ_4GJmzVrJ";
+  const TABLE = "content_planning";
+
+  const clientReady = SUPABASE_URL.includes(".supabase.co") &&
+    !SUPABASE_URL.includes("YOUR-PROJECT") && !SUPABASE_ANON_KEY.includes("YOUR_");
+  const db = clientReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+  const app = document.getElementById("app");
+  const rowsEl = document.getElementById("rows");
+  const statusEl = document.getElementById("status");
+  const addBtn = document.getElementById("addRow");
+  const platforms = ["threads", "instagram", "youtube"];
+  let activePlatform = "threads";
+  let rows = [];
+  let saveTimer = null;
+  let saveQueue = Promise.resolve();
+
+  function setStatus(message, type = "") {
+    statusEl.textContent = message;
+    statusEl.className = "status " + type;
+  }
+  function esc(value) {
+    return String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+  function newRow(order) {
+    return { platform: activePlatform, title: "", content_text: "", planned_upload: "", uploaded: "Belum", notes: "", sort_order: order };
+  }
+  function render() {
+    rowsEl.innerHTML = "";
+    rows.forEach((row, i) => {
+      const tr = document.createElement("tr");
+      tr.dataset.id = row.id || "";
+      tr.innerHTML = `
+        <td class="rownum">${i + 1}</td>
+        <td class="title"><textarea data-field="title" aria-label="Judul baris ${i+1}" placeholder="Judul…">${esc(row.title)}</textarea></td>
+        <td class="content"><textarea data-field="content_text" aria-label="Teks baris ${i+1}" placeholder="Tulis teks konten…">${esc(row.content_text)}</textarea></td>
+        <td><input type="date" data-field="planned_upload" aria-label="Rencana upload baris ${i+1}" value="${esc(row.planned_upload)}"></td>
+        <td><select data-field="uploaded" aria-label="Status upload baris ${i+1}">
+          <option ${row.uploaded === "Belum" ? "selected" : ""}>Belum</option>
+          <option ${row.uploaded === "Sudah" ? "selected" : ""}>Sudah</option>
+          <option ${row.uploaded === "Dijadwalkan" ? "selected" : ""}>Dijadwalkan</option>
+        </select></td>
+        <td class="notes"><textarea data-field="notes" aria-label="Keterangan baris ${i+1}" placeholder="Catatan…">${esc(row.notes)}</textarea></td>`;
+      rowsEl.appendChild(tr);
+    });
+  }
+  function readVisibleValues() {
+    [...rowsEl.querySelectorAll("tr")].forEach((tr, i) => {
+      if (!rows[i]) return;
+      tr.querySelectorAll("[data-field]").forEach(el => rows[i][el.dataset.field] = el.value);
+      rows[i].sort_order = i;
+    });
+  }
+  function scheduleSave() {
+    readVisibleValues();
+    if (!db) {
+      setStatus("Isi URL dan anon key Supabase di CONFIG.", "error");
+      return;
+    }
+    setStatus("Menyimpan…");
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => { saveQueue = saveQueue.then(saveRows).catch(err => setStatus("Gagal menyimpan: " + err.message, "error")); }, 650);
+  }
+  async function saveRows() {
+    if (!db) return;
+    const payload = rows.map((r, i) => ({
+      ...(r.id ? { id: r.id } : {}),
+      platform: activePlatform,
+      title: r.title || "",
+      content_text: r.content_text || "",
+      planned_upload: r.planned_upload || null,
+      uploaded: r.uploaded || "Belum",
+      notes: r.notes || "",
+      sort_order: i
+    }));
+    // Upsert current rows, then remove deleted rows only if explicitly tracked (no delete UI in this starter).
+    if (payload.length) {
+      const { data, error } = await db.from(TABLE).upsert(payload, { onConflict: "id" }).select();
+      if (error) throw error;
+      const idsByOrder = new Map((data || []).map(r => [r.sort_order, r.id]));
+      rows.forEach((r, i) => { if (!r.id && idsByOrder.has(i)) r.id = idsByOrder.get(i); });
+    }
+    setStatus("Tersimpan ✓", "ok");
+  }
+  async function loadRows() {
+    if (!db) {
+      rows = Array.from({length:4}, (_, i) => newRow(i));
+      render();
+      setStatus("Tambahkan konfigurasi Supabase untuk menyimpan data.", "error");
+      return;
+    }
+    setStatus("Memuat data…");
+    const { data, error } = await db.from(TABLE).select("*").eq("platform", activePlatform).order("sort_order", {ascending:true});
+    if (error) {
+      rows = Array.from({length:4}, (_, i) => newRow(i));
+      render();
+      setStatus("Gagal memuat: " + error.message, "error");
+      return;
+    }
+    rows = data || [];
+    if (rows.length < 4) {
+      const count = 4 - rows.length;
+      for (let i=0;i<count;i++) rows.push(newRow(rows.length));
+    }
+    render();
+    setStatus("Data dimuat ✓", "ok");
+  }
+  document.querySelectorAll(".tab").forEach(button => {
+    button.addEventListener("click", async () => {
+      if (button.dataset.platform === activePlatform) return;
+      readVisibleValues();
+      if (db) {
+        try { await saveRows(); } catch (e) { setStatus("Gagal menyimpan: " + e.message, "error"); return; }
+      }
+      activePlatform = button.dataset.platform;
+      app.dataset.platform = activePlatform;
+      document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b === button));
+      await loadRows();
+    });
+  });
+  rowsEl.addEventListener("input", scheduleSave);
+  rowsEl.addEventListener("change", scheduleSave);
+  addBtn.addEventListener("click", () => {
+    readVisibleValues();
+    rows.push(newRow(rows.length));
+    render();
+    scheduleSave();
+  });
+  document.getElementById("reload").addEventListener("click", loadRows);
+  loadRows();
+</script>
+</body>
+</html>
